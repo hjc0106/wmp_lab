@@ -152,6 +152,9 @@ def make_env(
             cfg.scene.seed = seed
     if cfg_overrides is not None:
         cfg_overrides(cfg)
+    terrain_generator = getattr(cfg.terrain, "terrain_generator", None)
+    if seed is not None and terrain_generator is not None and terrain_generator.seed is None:
+        terrain_generator.seed = seed
     cfg.depth.camera_num_envs = min(int(cfg.depth.camera_num_envs), int(cfg.scene.num_envs))
     log_dir = writable_dir(ROOT / "logs" / "isaaclab", Path("/tmp/wmp_lab_logs/isaaclab"))
     cfg.log_dir = log_dir

@@ -20,25 +20,11 @@ from isaaclab.sensors.ray_caster.patterns.patterns_cfg import (
     PinholeCameraPatternCfg,
 )
 from isaaclab.sim import SimulationCfg
-from isaaclab.terrains import TerrainGeneratorCfg, TerrainImporterCfg
-from isaaclab.terrains.sub_terrain_cfg import SubTerrainBaseCfg
-from isaaclab.terrains.trimesh.mesh_terrains_cfg import (
-    MeshGapTerrainCfg,
-    MeshPitTerrainCfg,
-    MeshPlaneTerrainCfg,
-    MeshPyramidStairsTerrainCfg,
-    MeshInvertedPyramidStairsTerrainCfg,
-    MeshRandomGridTerrainCfg,
-)
-from isaaclab.terrains.height_field.hf_terrains_cfg import (
-    HfWaveTerrainCfg,
-    HfPyramidSlopedTerrainCfg,
-    HfDiscreteObstaclesTerrainCfg,
-    HfRandomUniformTerrainCfg,
-)
+from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 
-from .terrains import crawl_terrain, tilt_terrain
+from .legacy_terrain_generator import LegacyTerrainGenerator, LegacyTerrainGeneratorCfg
+from .legacy_terrain_layout import DEFAULT_TERRAIN_PROPORTIONS, LEGACY_TERRAIN_NAMES, normalize_terrain_name
 
 
 WMP_LAB_ROOT = Path(__file__).resolve().parents[3]
@@ -159,9 +145,9 @@ class Go2TerrainMetaCfg:
     ]
     num_rows: int = 10
     num_cols: int = 20
-    # proportions ordered: wave, slope, stairsUp, stairsDown, discrete, gap,
-    # pit, tilt, crawl, roughFlat
-    terrain_proportions: list = [0.0, 0.05, 0.15, 0.15, 0.0, 0.25, 0.25, 0.05, 0.05, 0.05]
+    # proportions ordered: wave, slope, stairs_up, stairs_down, discrete, gap,
+    # climb, tilt, crawl, rough_flat
+    terrain_proportions: list = list(DEFAULT_TERRAIN_PROPORTIONS)
     slope_treshold: float = 0.75
     terrain_length: float = 8.0
     terrain_width: float = 8.0
@@ -285,35 +271,15 @@ class Go2NoiseCfg:
     noise_level: float = 1.0
 
 
-# --------------------------------------------------------------------------- #
-# Custom sub-terrain cfgs (tilt/crawl) wrapping the hand-written generators.
-# --------------------------------------------------------------------------- #
-@configclass
-class TiltTerrainCfg(SubTerrainBaseCfg):
-    function = tilt_terrain
-    slope_range: tuple = (0.05, 0.35)
-
-
-@configclass
-class CrawlTerrainCfg(SubTerrainBaseCfg):
-    function = crawl_terrain
-    ceiling_height_range: tuple = (0.25, 0.30)
-    bridge_length: float = 5.6
-    bridge_width: float = 7.2
-
-
 # Name order matches legacy WMP terrain_proportions indexing.
-GO2_TERRAIN_NAMES = (
-    "wave", "slope", "stairs_up", "stairs_down", "discrete",
-    "gap", "pit", "tilt", "crawl", "rough_flat",
-)
+GO2_TERRAIN_NAMES = LEGACY_TERRAIN_NAMES
 
-# Play presets mirror legacy play.py terrain_proportions (climb == pit).
+# Play presets mirror legacy play.py terrain_proportions.
 PLAY_TERRAIN_PRESETS = {
     "slope": "slope",
     "stair": "stairs_up",
     "gap": "gap",
-    "climb": "pit",
+    "climb": "climb",
     "tilt": "tilt",
     "crawl": "crawl",
     "plane": None,
@@ -325,45 +291,34 @@ def _build_go2_terrain_generator(
     num_cols: int,
     curriculum: bool,
     proportions: dict | None = None,
-) -> TerrainGeneratorCfg:
-    """Terrain generator matching the WMP 10-type curriculum proportions."""
-    default = {
-        "wave": 0.0,
-        "slope": 0.05,
-        "stairs_up": 0.15,
-        "stairs_down": 0.15,
-        "discrete": 0.0,
-        "gap": 0.25,
-        "pit": 0.25,
-        "tilt": 0.05,
-        "crawl": 0.05,
-        "rough_flat": 0.05,
-    }
+    seed: int | None = None,
+    compat_mode: str = "legacy_exact",
+    slope_direction: str = "legacy",
+) -> LegacyTerrainGeneratorCfg:
+    """Legacy-compatible terrain generator for the WMP 10-type curriculum."""
+    default = {name: float(DEFAULT_TERRAIN_PROPORTIONS[i]) for i, name in enumerate(GO2_TERRAIN_NAMES)}
     if proportions is not None:
-        default = {name: float(proportions.get(name, 0.0)) for name in GO2_TERRAIN_NAMES}
-    return TerrainGeneratorCfg(
-        seed=1,
+        normalized = {normalize_terrain_name(name): float(value) for name, value in proportions.items()}
+        default = {name: normalized.get(name, 0.0) for name in GO2_TERRAIN_NAMES}
+    return LegacyTerrainGeneratorCfg(
+        class_type=LegacyTerrainGenerator,
+        seed=seed,
         curriculum=curriculum,
+        ordered_generation=True,
+        compat_mode=compat_mode,
+        slope_direction=slope_direction,
+        terrain_proportions=[default[n] for n in GO2_TERRAIN_NAMES],
         size=(8.0, 8.0),
-        border_width=0.0,
+        border_width=25.0,
+        # A one-meter-deep border leaves its collision top at z=0.
+        border_height=1.0,
         num_rows=num_rows,
         num_cols=num_cols,
         horizontal_scale=0.1,
         vertical_scale=0.005,
         slope_threshold=0.75,
         use_cache=False,
-        sub_terrains={
-            "wave":         HfWaveTerrainCfg(proportion=default["wave"], amplitude_range=(0.05, 0.2), num_waves=2),
-            "slope":        HfPyramidSlopedTerrainCfg(proportion=default["slope"], slope_range=(0.0, 0.4), platform_width=2.0, border_width=0.25),
-            "stairs_up":    MeshPyramidStairsTerrainCfg(proportion=default["stairs_up"], step_height_range=(0.05, 0.23), step_width=0.3, platform_width=3.0, border_width=1.0, holes=False),
-            "stairs_down":  MeshInvertedPyramidStairsTerrainCfg(proportion=default["stairs_down"], step_height_range=(0.05, 0.23), step_width=0.3, platform_width=3.0, border_width=1.0, holes=False),
-            "discrete":     HfDiscreteObstaclesTerrainCfg(proportion=default["discrete"], obstacle_width_range=(0.2, 0.4), obstacle_height_range=(0.05, 0.2), num_obstacles=4, platform_width=2.0),
-            "gap":          MeshGapTerrainCfg(proportion=default["gap"], gap_width_range=(0.2, 1.0), platform_width=1.6),
-            "pit":          MeshPitTerrainCfg(proportion=default["pit"], pit_depth_range=(0.3, 0.8), platform_width=2.0, double_pit=False),
-            "tilt":         TiltTerrainCfg(proportion=default["tilt"], slope_range=(0.05, 0.35)),
-            "crawl":        CrawlTerrainCfg(proportion=default["crawl"], ceiling_height_range=(0.25, 0.30), bridge_length=5.6, bridge_width=7.2),
-            "rough_flat":   HfRandomUniformTerrainCfg(proportion=default["rough_flat"], noise_range=(0.02, 0.10), noise_step=0.02, border_width=0.25),
-        },
+        sub_terrains={},
     )
 
 

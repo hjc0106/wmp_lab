@@ -1,0 +1,2260 @@
+{
+  "meta": {
+    "source": "legacy_isaacgym",
+    "reference": "/home/hongjiacheng/codes/robot_lab/WMP-go2_version/legged_gym/utils/terrain.py",
+    "num_rows": 10,
+    "num_cols": 20,
+    "seeds": [
+      1,
+      7
+    ],
+    "rows": [
+      0,
+      3,
+      6,
+      9
+    ]
+  },
+  "tiles": [
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        4.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        12.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        20.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        28.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        36.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        44.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        52.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        60.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        68.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        4.0,
+        76.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        84.0,
+        0.05
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        4.0,
+        92.0,
+        0.03
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        100.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        116.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        124.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 0,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        156.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.3,
+      "height_min": -46,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        4.0,
+        -0.145
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        12.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        20.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        28.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        36.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        44.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        52.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        28.0,
+        60.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        68.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        76.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        28.0,
+        84.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        28.0,
+        92.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        100.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        124.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 45,
+      "origin": [
+        28.0,
+        132.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 3,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        156.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.6,
+      "height_min": -84,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        4.0,
+        -0.33
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        12.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        20.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        28.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        36.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        44.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        52.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        60.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        68.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        76.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        84.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        92.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        100.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        124.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 6,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        156.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.9,
+      "height_min": -121,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        4.0,
+        -0.52
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        12.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        20.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        28.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        36.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        44.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        52.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        60.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 8,
+      "origin": [
+        76.0,
+        68.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        76.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        84.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        92.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        100.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 117,
+      "origin": [
+        76.0,
+        108.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        124.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 117,
+      "origin": [
+        76.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 1,
+      "row": 9,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        156.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        4.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        12.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        20.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.0,
+      "height_min": -90,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        28.0,
+        -0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        36.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        44.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 90,
+      "origin": [
+        4.0,
+        52.0,
+        0.45
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        60.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        68.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        76.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        84.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.0,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        4.0,
+        92.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        100.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        124.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.0,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        4.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 0,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.0,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        4.0,
+        156.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.3,
+      "height_min": -47,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        4.0,
+        -0.145
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        12.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        20.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.3,
+      "height_min": -180,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        28.0,
+        -0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        36.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        44.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 180,
+      "origin": [
+        28.0,
+        52.0,
+        0.9
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        28.0,
+        60.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        68.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        76.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        28.0,
+        84.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.3,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        92.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        100.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        124.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 46,
+      "origin": [
+        28.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.3,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        28.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 3,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.3,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        28.0,
+        156.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.6,
+      "height_min": -84,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        4.0,
+        -0.34
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        12.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        20.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.6,
+      "height_min": -279,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        28.0,
+        -1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        36.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        44.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 279,
+      "origin": [
+        52.0,
+        52.0,
+        1.395
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        60.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        68.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        76.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        84.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.6,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        52.0,
+        92.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        100.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        108.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        116.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        124.0,
+        0.035
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 82,
+      "origin": [
+        52.0,
+        132.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.6,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        52.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 6,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.6,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        52.0,
+        156.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 0,
+      "category": "slope",
+      "difficulty": 0.9,
+      "height_min": -122,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        4.0,
+        -0.52
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 1,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        12.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 2,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        20.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 3,
+      "category": "stairs_up",
+      "difficulty": 0.9,
+      "height_min": -378,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        28.0,
+        -1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 4,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        36.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 5,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        44.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 6,
+      "category": "stairs_down",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 378,
+      "origin": [
+        76.0,
+        52.0,
+        1.8900000000000001
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 7,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        60.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 8,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 8,
+      "origin": [
+        76.0,
+        68.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 9,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        76.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 10,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        84.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 11,
+      "category": "gap",
+      "difficulty": 0.9,
+      "height_min": -1010,
+      "height_max": 9,
+      "origin": [
+        76.0,
+        92.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 12,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        100.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 13,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        108.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 14,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        116.0,
+        0.04
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 15,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        124.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 16,
+      "category": "climb",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 118,
+      "origin": [
+        76.0,
+        132.0,
+        0.045
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 17,
+      "category": "tilt",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        140.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 18,
+      "category": "crawl",
+      "difficulty": 0.9,
+      "height_min": 0,
+      "height_max": 0,
+      "origin": [
+        76.0,
+        148.0,
+        0.0
+      ]
+    },
+    {
+      "seed": 7,
+      "row": 9,
+      "column": 19,
+      "category": "rough_flat",
+      "difficulty": 0.9,
+      "height_min": -10,
+      "height_max": 10,
+      "origin": [
+        76.0,
+        156.0,
+        0.04
+      ]
+    }
+  ]
+}

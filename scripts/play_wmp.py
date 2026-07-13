@@ -34,7 +34,6 @@ def _apply_play_overrides(cfg, args):
     cfg.env.num_envs = num_envs
     cfg.noise.add_noise = False
 
-    # Domain randomization: keep gains fixed for stable eval (legacy play defaults).
     dr = cfg.domain_rand
     dr.friction_range = [1.0, 1.0]
     dr.restitution_range = [0.0, 0.0]
@@ -50,7 +49,6 @@ def _apply_play_overrides(cfg, args):
     dr.stiffness_multiplier_range = [1.0, 1.0]
     dr.damping_multiplier_range = [1.0, 1.0]
 
-    # Fixed forward command.
     r = cfg.commands.ranges
     r.lin_vel_x = [args.lin_vel_x, args.lin_vel_x]
     r.lin_vel_y = [0.0, 0.0]
@@ -74,6 +72,10 @@ def _apply_play_overrides(cfg, args):
         terrain_key = "climb"
 
     terrain_name = PLAY_TERRAIN_PRESETS[terrain_key]
+    terrain_seed = getattr(args, "terrain_seed", None)
+    if terrain_seed is None:
+        terrain_seed = getattr(args, "seed", None)
+
     if terrain_name is None:
         cfg.terrain_meta.mesh_type = "plane"
         cfg.terrain_meta.curriculum = False
@@ -89,7 +91,7 @@ def _apply_play_overrides(cfg, args):
         cfg.terrain_meta.mesh_type = "trimesh"
         cfg.terrain_meta.curriculum = False
         cfg.terrain_meta.num_rows = max(1, int(args.terrain_rows))
-        cfg.terrain_meta.num_cols = 1
+        cfg.terrain_meta.num_cols = max(1, int(args.terrain_cols))
         cfg.terrain_meta.terrain_proportions = [proportions[n] for n in GO2_TERRAIN_NAMES]
         cfg.terrain_meta.max_init_terrain_level = cfg.terrain_meta.num_rows - 1
         cfg.terrain.terrain_type = "generator"
@@ -98,6 +100,9 @@ def _apply_play_overrides(cfg, args):
             num_cols=cfg.terrain_meta.num_cols,
             curriculum=False,
             proportions=proportions,
+            seed=terrain_seed,
+            compat_mode=args.terrain_compat,
+            slope_direction=args.slope_direction,
         )
         cfg.terrain.use_terrain_origins = True
         cfg.terrain.max_init_terrain_level = cfg.terrain_meta.max_init_terrain_level
@@ -280,9 +285,23 @@ def main():
         "--terrain",
         default="climb",
         choices=["slope", "stair", "gap", "climb", "crawl", "tilt", "plane"],
-        help="Single-terrain play preset (climb == pit, same as legacy play.py)",
+        help="Single-terrain play preset (legacy play.py compatible)",
     )
     parser.add_argument("--terrain_rows", type=int, default=10)
+    parser.add_argument("--terrain_cols", type=int, default=20)
+    parser.add_argument("--terrain_seed", type=int, default=None)
+    parser.add_argument(
+        "--terrain_compat",
+        default="legacy_exact",
+        choices=["legacy_exact", "legacy_fixed"],
+        help="legacy_exact reproduces old crawl overlap; legacy_fixed symmetric crawl bars",
+    )
+    parser.add_argument(
+        "--slope_direction",
+        default="legacy",
+        choices=["legacy", "up", "down"],
+        help="Slope sign override (legacy splits selected slope columns by direction)",
+    )
     parser.add_argument("--lin_vel_x", type=float, default=0.6)
     parser.add_argument("--num_episodes", type=float, default=1.0)
     args = parser.parse_args()

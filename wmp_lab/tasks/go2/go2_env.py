@@ -13,6 +13,7 @@ from isaaclab.envs import DirectRLEnv
 from isaaclab.sensors import ContactSensor, RayCaster, RayCasterCamera
 
 from .go2_env_cfg import Go2AmpLabCfg, Go2LabCfg, Go2RoughLabCfg
+from .legacy_terrain_layout import LEGACY_TERRAIN_NAMES, column_category_names
 
 
 def _wrap_to_pi(angles: torch.Tensor) -> torch.Tensor:
@@ -219,44 +220,24 @@ class Go2WmpLabEnv(DirectRLEnv):
         """Per-env bool masks for each curriculum terrain category (plane => all False)."""
         n = self.num_envs
         device = self.device
-        self._cat_masks = {k: torch.zeros(n, dtype=torch.bool, device=device) for k in
-                           ("wave", "slope", "stairs_up", "stairs_down", "discrete",
-                            "gap", "pit", "tilt", "crawl", "rough_flat")}
+        self._cat_masks = {k: torch.zeros(n, dtype=torch.bool, device=device) for k in LEGACY_TERRAIN_NAMES}
         if self.cfg.terrain_meta.mesh_type != "trimesh":
             # plane: everything is treated as "rough_flat"
             self._cat_masks["rough_flat"][:] = True
             self._terrain_levels = torch.zeros(n, dtype=torch.long, device=device)
             return
-        # rebuild column -> category from cumulative proportions (matches generator)
-        props = self.cfg.terrain_meta.terrain_proportions
+        # rebuild column -> category using the shared legacy mapping
         cols = self.cfg.terrain_meta.num_cols
-        cum = 0.0
-        col_cat = [0] * cols
-        names = list(self._cat_masks.keys())
-        for ci in range(cols):
-            frac = (ci + 0.5) / cols
-            # find the category whose cumulative proportion straddles frac
-            running = 0.0
-            chosen = names[-1]
-            for k, p in enumerate(props):
-                if frac <= running + p and p > 0:
-                    chosen = names[k]
-                    break
-                running += p
-            col_cat[ci] = self._cat_name_to_idx(chosen)
-        # terrain_types per env (IsaacLab assigns by column)
+        col_names = column_category_names(cols, self.cfg.terrain_meta.terrain_proportions)
         ttypes = self._terrain.terrain_types if hasattr(self, "_terrain") else \
                  torch.div(torch.arange(n, device=device), max(1, n / cols), rounding_mode="floor").to(torch.long)
-        for ci in range(cols):
-            envs = (ttypes == ci)
-            name = names[col_cat[ci]]
-            self._cat_masks[name] |= envs
+        for ci, name in enumerate(col_names):
+            self._cat_masks[name] |= ttypes == ci
         self._terrain_levels = self._terrain.terrain_levels.clone()
 
     @staticmethod
     def _cat_name_to_idx(name):
-        order = ("wave", "slope", "stairs_up", "stairs_down", "discrete", "gap", "pit", "tilt", "crawl", "rough_flat")
-        return order.index(name)
+        return LEGACY_TERRAIN_NAMES.index(name)
 
     def _cat_mask(self, cats):
         m = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
@@ -328,7 +309,7 @@ class Go2WmpLabEnv(DirectRLEnv):
         terminated = torch.zeros_like(time_out)
 
         # Match original IsaacGym Go2 termination (legged_robot.check_termination).
-        # Do NOT use absolute root_z < 0.18 — that kills robots on pits/low tiles every step.
+        # Do NOT use absolute root_z < 0.18 — that kills robots on climb/low tiles every step.
         if len(self.termination_contact_indices) > 0:
             forces = self._contact_sensor.data.net_forces_w[:, self.termination_contact_indices, :]
             terminated |= torch.any(torch.norm(forces, dim=-1) > 1.0, dim=1)
@@ -367,8 +348,8 @@ class Go2WmpLabEnv(DirectRLEnv):
         # obstacle (non rough_flat) envs steer toward their heading target
         obs_mask = ~self._cat_mask(("rough_flat",))
         self.commands[obs_mask, 2] = torch.clip(0.5 * _wrap_to_pi(self.commands[obs_mask, 3] - heading[obs_mask]), -1.0, 1.0)
-        # tilt/pit envs use no heading target
-        zero_mask = self._cat_mask(("tilt", "pit"))
+        # tilt/climb envs use no heading target
+        zero_mask = self._cat_mask(("tilt", "climb"))
         self.commands[zero_mask, 3] = 0.0
         self.commands[zero_mask, 2] = 0.0
 
@@ -682,17 +663,17 @@ class Go2WmpLabEnv(DirectRLEnv):
         stumbled = torch.any(xy > 4 * z, dim=1).float()
         stumbled = stumbled * (self._terrain_levels > 3).float()
         out = torch.zeros(self.num_envs, device=self.device)
-        mask = self._cat_mask(("gap", "pit"))
+        mask = self._cat_mask(("gap", "climb"))
         out[mask] = stumbled[mask]
         return out
 
     def _rew_feet_edge(self):
         # Without the per-cell x_edge mask we use a proxy: penalise feet contacts
-        # (lateral-rich) within the gap/pit curriculum tiles.
+        # (lateral-rich) within the gap/climb curriculum tiles.
         out = torch.zeros(self.num_envs, device=self.device)
         if len(self.feet_indices) == 0:
             return out
-        mask = self._cat_mask(("gap", "pit"))
+        mask = self._cat_mask(("gap", "climb"))
         if mask.sum() == 0:
             return out
         f = self._contact_sensor.data.net_forces_w[:, self.feet_indices, :]
