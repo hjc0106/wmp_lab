@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# IDE / OS
+.idea/
+.vscode/
+.cursor/
+*.swp
+.DS_Store
+
+# Training artifacts (large)
+logs/
+*.pt
+*.pth
+*.onnx
+*.log
+events.out.tfevents.*
+
+# Local run helpers / temp
+run_*.log
+test.log
+/tmp/
+
+# Generated USD / caches (regenerable; can be large)
+generated/
+*.usd
+*.usdc
+*.usda
+
+# Keep small mocap text datasets; ignore heavy binary dumps if added later
+*.npz
+*.h5
+*.pkl
+*.zip
+*.tar
+*.tar.gz
+*.bak
