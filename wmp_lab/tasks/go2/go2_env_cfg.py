@@ -23,13 +23,18 @@ from isaaclab.sim import SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 
+from wmp_lab.paths import generated_path, lab_root, resource_path
 from .legacy_terrain_generator import LegacyTerrainGenerator, LegacyTerrainGeneratorCfg
-from .legacy_terrain_layout import DEFAULT_TERRAIN_PROPORTIONS, LEGACY_TERRAIN_NAMES, normalize_terrain_name
+from .legacy_terrain_layout import (
+    DEFAULT_TERRAIN_PROPORTIONS,
+    LEGACY_TERRAIN_NAMES,
+    PLAY_TERRAIN_PRESETS,
+    normalize_terrain_name,
+)
 
-
-WMP_LAB_ROOT = Path(__file__).resolve().parents[3]
-GO2_URDF = WMP_LAB_ROOT / "resources" / "robots" / "go2" / "urdf" / "go2.urdf"
-USD_DIR = WMP_LAB_ROOT / "generated" / "usd"
+WMP_LAB_ROOT = lab_root()
+GO2_URDF = resource_path("robots", "go2", "urdf", "go2.urdf")
+USD_DIR = generated_path("usd")
 TERRAIN_PRIM = "/World/ground"
 
 # Non-uniform height sample point sets (module-level so they can be reused by
@@ -78,7 +83,7 @@ class Go2DepthCfg:
     camera_terrain_num_rows: int = 10
     camera_terrain_num_cols: int = 20
     position: list = [0.33, 0.0, 0.08]
-    y_angle: list = [-5.0, 5.0]
+    y_angle: list = [0.0, 0.0]
     z_angle: list = [0.0, 0.0]
     x_angle: list = [0.0, 0.0]
     update_interval: int = 5
@@ -274,17 +279,6 @@ class Go2NoiseCfg:
 # Name order matches legacy WMP terrain_proportions indexing.
 GO2_TERRAIN_NAMES = LEGACY_TERRAIN_NAMES
 
-# Play presets mirror legacy play.py terrain_proportions.
-PLAY_TERRAIN_PRESETS = {
-    "slope": "slope",
-    "stair": "stairs_up",
-    "gap": "gap",
-    "climb": "climb",
-    "tilt": "tilt",
-    "crawl": "crawl",
-    "plane": None,
-}
-
 
 def _build_go2_terrain_generator(
     num_rows: int,
@@ -469,7 +463,7 @@ class Go2LabCfg(DirectRLEnvCfg):
 
     forward_height_scanner: RayCasterCfg = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(1.0, 0.0, 20.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         ray_alignment="yaw",
         pattern_cfg=PointsPatternCfg(points=_forward_points_xy()),
         debug_vis=False,
@@ -515,6 +509,7 @@ class Go2RoughLabCfg(Go2LabCfg):
 class Go2AmpLabCfg(Go2LabCfg):
     def __post_init__(self):
         self.depth.use_camera = True
+        self.depth.camera_num_envs = 128
         self.terrain_meta.mesh_type = "trimesh"
         self.terrain_meta.curriculum = True
         self.terrain.terrain_type = "generator"
@@ -525,3 +520,21 @@ class Go2AmpLabCfg(Go2LabCfg):
         )
         self.terrain.use_terrain_origins = True
         self.terrain.max_init_terrain_level = self.terrain_meta.max_init_terrain_level
+
+
+@configclass
+class Go2AmpFidelityLabCfg(Go2AmpLabCfg):
+    """WMP AMP with 1024 camera envs for depth fidelity (high memory)."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.depth.camera_num_envs = 1024
+
+
+@configclass
+class Go2AmpLowMemoryLabCfg(Go2AmpLabCfg):
+    """WMP AMP with 128 camera envs (default memory footprint)."""
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.depth.camera_num_envs = 128

@@ -15,6 +15,20 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def patch_warp_for_isaacsim() -> None:
+    """Isaac Sim 5.1 still references ``wp.types.array`` in type hints.
+
+    warp-lang >= 1.14 removed that alias; patch it before SimulationApp imports
+    isaacsim.core.utils.warp.
+    """
+    try:
+        import warp as wp
+    except ImportError:
+        return
+    if not hasattr(wp.types, "array"):
+        wp.types.array = wp.array
+
+
 def writable_dir(preferred: Path, fallback: Path) -> str:
     try:
         os.makedirs(preferred, exist_ok=True)
@@ -31,6 +45,7 @@ def bootstrap_paths():
     root = str(ROOT)
     if root not in sys.path:
         sys.path.insert(0, root)
+    patch_warp_for_isaacsim()
     # Redirect the IsaacLab logger temp dir to a user-writable location (the
     # system default /tmp/isaaclab may be owned by another user on shared hosts).
     tmpdir = writable_dir(ROOT / "logs" / "tmp", Path("/tmp/wmp_lab_logs/tmp"))
@@ -52,6 +67,11 @@ def add_common_args(parser: argparse.ArgumentParser):
     parser.add_argument("--max_iterations", type=int, default=None)
     parser.add_argument("--log_dir", default=None)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--resume", action="store_true", default=False)
+    parser.add_argument("--checkpoint", default=None, help="Checkpoint path or -1 for latest in log_dir")
+    parser.add_argument("--load_optimizer", action="store_true", default=True)
+    parser.add_argument("--no_load_optimizer", action="store_false", dest="load_optimizer")
+    parser.add_argument("--load_wm_optimizer", action="store_true", default=False)
     parser.add_argument(
         "--gpu_ids",
         default=None,

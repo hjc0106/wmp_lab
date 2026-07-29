@@ -144,8 +144,19 @@ class Go2WmpLabEnv(DirectRLEnv):
 
         self.reward_curriculum_coef = [s[2] for s in self.cfg.rewards.reward_curriculum_schedule] if self.cfg.rewards.reward_curriculum else []
 
-        # sample static domain randomization once (matches IsaacGym creation-time rand)
+        self._reward_scales = self._prepare_reward_scales()
+        self._contact_filt = torch.zeros(self.num_envs, 4, dtype=torch.bool, device=self.device)
+        self._default_body_masses = None
+        self._default_body_inertia = None
+        self._default_body_coms = None
+        self._link_mass_scales = torch.ones(self.num_envs, 1, device=self.device)
+
+        from .domain_rand import validate_domain_rand_config
+
+        self._init_edge_mask()
+        self._capture_default_body_properties()
         self._sample_static_domain_rand(torch.arange(self.num_envs, device=self.device))
+        self._apply_static_domain_rand(torch.arange(self.num_envs, device=self.device))
         self._resample_commands(torch.arange(self.num_envs, device=self.device))
         self._update_heading_command()
 
@@ -177,6 +188,39 @@ class Go2WmpLabEnv(DirectRLEnv):
             self.scene.filter_collisions(global_prim_paths=[self.cfg.terrain.prim_path])
         light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
         light_cfg.func("/World/Light", light_cfg)
+
+    def _prepare_reward_scales(self) -> dict[str, float]:
+        """Scale reward coefficients by step_dt once (matches IsaacGym _prepare_reward_function)."""
+        scales = {}
+        cfg_scales = self.cfg.rewards.scales
+        for key in [
+            "tracking_lin_vel", "tracking_ang_vel", "lin_vel_z", "torques", "dof_acc",
+            "action_rate", "collision", "feet_air_time", "feet_stumble", "feet_edge",
+            "dof_error", "cheat", "stuck",
+        ]:
+            scale = float(getattr(cfg_scales, key, 0.0))
+            scales[key] = scale * self.step_dt if scale != 0.0 else 0.0
+        return scales
+
+    def _init_edge_mask(self) -> None:
+        self._x_edge_mask = None
+        self._edge_mask_origin = None
+        self._edge_mask_scale = self.cfg.terrain_meta.horizontal_scale
+        terrain = getattr(self, "_terrain", None)
+        if terrain is not None and getattr(terrain, "x_edge_mask", None) is not None:
+            self._x_edge_mask = torch.tensor(terrain.x_edge_mask, device=self.device, dtype=torch.bool)
+            self._edge_mask_origin = torch.tensor(
+                terrain.edge_mask_world_origin, device=self.device, dtype=torch.float32
+            )
+            self._edge_mask_scale = float(terrain.edge_mask_horizontal_scale)
+
+    def query_edge_mask(self, world_xy: torch.Tensor) -> torch.Tensor:
+        if self._x_edge_mask is None or self._edge_mask_origin is None:
+            return torch.zeros(world_xy.shape[:-1], device=self.device, dtype=torch.bool)
+        idx = ((world_xy - self._edge_mask_origin) / self._edge_mask_scale).round().long()
+        idx[..., 0].clamp_(0, self._x_edge_mask.shape[0] - 1)
+        idx[..., 1].clamp_(0, self._x_edge_mask.shape[1] - 1)
+        return self._x_edge_mask[idx[..., 0], idx[..., 1]]
 
     # ------------------------------------------------------------------ #
     def _init_contact_body_ids(self):
@@ -413,6 +457,7 @@ class Go2WmpLabEnv(DirectRLEnv):
         self._last_last_actions[env_ids] = 0.0
         self._last_dof_vel[env_ids] = 0.0
         self._last_torques[env_ids] = 0.0
+        self._contact_filt[env_ids] = False
         if len(self.depth_index) > 0:
             depth_ids = torch.as_tensor(self.depth_index, dtype=torch.long, device=self.device)
             in_reset = torch.isin(depth_ids, env_ids)
@@ -420,8 +465,9 @@ class Go2WmpLabEnv(DirectRLEnv):
 
         # episode logging
         ep = {}
+        ep_len_s = self.cfg.env.episode_length_s
         for key in self.episode_sums:
-            ep["rew_" + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length
+            ep["rew_" + key] = torch.mean(self.episode_sums[key][env_ids]) / ep_len_s
             self.episode_sums[key][env_ids] = 0.0
         if self.cfg.terrain_meta.curriculum:
             ep["terrain_level"] = torch.mean(self._terrain_levels.float())
@@ -439,24 +485,80 @@ class Go2WmpLabEnv(DirectRLEnv):
         if dr.randomize_motor_strength:
             self._motor_strength[env_ids] = torch.empty((len(env_ids), self.num_actions), device=self.device).uniform_(*dr.motor_strength_range)
 
+    def _capture_default_body_properties(self) -> None:
+        view = self._robot.root_physx_view
+        self._default_body_masses = view.get_masses().clone()
+        self._default_body_inertia = view.get_inertias().clone()
+        self._default_body_coms = view.get_coms().clone()
+
+    def _apply_static_domain_rand(self, env_ids: torch.Tensor) -> None:
+        from .domain_rand import apply_static_domain_rand
+
+        if self._default_body_masses is None:
+            return
+        apply_static_domain_rand(
+            self._robot,
+            env_ids,
+            self.cfg.domain_rand,
+            frictions=self.randomized_frictions,
+            restitutions=self.randomized_restitutions,
+            added_masses=self.randomized_added_masses,
+            com_offsets=self.randomized_com_pos,
+            link_mass_scales=self._link_mass_scales,
+            default_masses=self._default_body_masses,
+            default_inertia=self._default_body_inertia,
+        )
+        self._sync_privileged_from_physx(env_ids)
+
+    def _sync_privileged_from_physx(self, env_ids: torch.Tensor) -> None:
+        from .domain_rand import read_back_static_domain_rand
+
+        if len(env_ids) == 0:
+            return
+        f, r, m, c = read_back_static_domain_rand(
+            self._robot, env_ids, self.device, self._default_body_coms
+        )
+        self.randomized_frictions[env_ids] = f
+        self.randomized_restitutions[env_ids] = r
+        self.randomized_added_masses[env_ids] = m
+        self.randomized_com_pos[env_ids] = c
+
     def _sample_static_domain_rand(self, env_ids):
         if len(env_ids) == 0:
             return
         dr = self.cfg.domain_rand
         if dr.randomize_friction:
             self.randomized_frictions[env_ids] = torch.empty((len(env_ids), 1), device=self.device).uniform_(*dr.friction_range)
+        else:
+            self.randomized_frictions[env_ids] = 1.0
         if dr.randomize_restitution:
             self.randomized_restitutions[env_ids] = torch.empty((len(env_ids), 1), device=self.device).uniform_(*dr.restitution_range)
+        else:
+            self.randomized_restitutions[env_ids] = 0.0
         if dr.randomize_base_mass:
             self.randomized_added_masses[env_ids] = torch.empty((len(env_ids), 1), device=self.device).uniform_(*dr.added_mass_range)
+        else:
+            self.randomized_added_masses[env_ids] = 0.0
         if dr.randomize_com_pos:
             for i, axis in enumerate(("com_x_pos_range", "com_y_pos_range", "com_z_pos_range")):
                 self.randomized_com_pos[env_ids, i] = torch.empty((len(env_ids),), device=self.device).uniform_(*getattr(dr, axis))
+        else:
+            self.randomized_com_pos[env_ids] = 0.0
+        if dr.randomize_link_mass:
+            n_links = max(1, self._robot.num_bodies - 1)
+            if self._link_mass_scales.shape[1] != n_links:
+                self._link_mass_scales = torch.ones(self.num_envs, n_links, device=self.device)
+            self._link_mass_scales[env_ids] = torch.empty(
+                (len(env_ids), n_links), device=self.device
+            ).uniform_(*dr.link_mass_range)
+        else:
+            self._link_mass_scales[env_ids] = 1.0
 
     # ------------------------------------------------------------------ #
     def _height_scan(self) -> torch.Tensor:
         sn = self._height_scanner
-        heights = sn.data.pos_w[:, 2].unsqueeze(1) - sn.data.ray_hits_w[..., 2]
+        base_z = self._robot.data.root_pos_w[:, 2].unsqueeze(1)
+        heights = base_z - sn.data.ray_hits_w[..., 2]
         heights = (heights - self.cfg.normalization.base_height).clip(-1.0, 1.0)
         if heights.shape[1] < self.height_dim:
             heights = torch.nn.functional.pad(heights, (0, self.height_dim - heights.shape[1]))
@@ -464,7 +566,8 @@ class Go2WmpLabEnv(DirectRLEnv):
 
     def get_forward_map(self) -> torch.Tensor:
         sn = self._forward_height_scanner
-        heights = sn.data.pos_w[:, 2].unsqueeze(1) - sn.data.ray_hits_w[..., 2]
+        base_z = self._robot.data.root_pos_w[:, 2].unsqueeze(1)
+        heights = base_z - sn.data.ray_hits_w[..., 2]
         heights = (heights - self.cfg.normalization.base_height).clip(-1.0, 1.0)
         if heights.shape[1] < self.forward_height_dim:
             heights = torch.nn.functional.pad(heights, (0, self.forward_height_dim - heights.shape[1]))
@@ -574,7 +677,7 @@ class Go2WmpLabEnv(DirectRLEnv):
 
     # ------------------------------------------------------------------ #
     def _compute_rewards(self) -> torch.Tensor:
-        s = self.cfg.rewards.scales
+        s = self._reward_scales
         robot = self._robot.data
         dof_pos = robot.joint_pos[:, :self.num_actions]
         dof_vel = robot.joint_vel[:, :self.num_actions]
@@ -604,19 +707,19 @@ class Go2WmpLabEnv(DirectRLEnv):
             logs[name] = torch.mean(r).detach()
 
         # ----- individual reward terms -----
-        add("tracking_lin_vel", self._rew_tracking_lin_vel(lin_vel_b, commands), s.tracking_lin_vel)
-        add("tracking_ang_vel", self._rew_tracking_ang_vel(ang_vel_b, commands), s.tracking_ang_vel)
-        add("lin_vel_z", torch.square(lin_vel_b[:, 2]), s.lin_vel_z)
-        add("torques", torch.sum(torch.square(torques), dim=1), s.torques)
-        add("dof_acc", torch.sum(torch.square((self._last_dof_vel - dof_vel) / self.dt), dim=1), s.dof_acc)
-        add("action_rate", torch.sum(torch.square(self._last_actions - self._actions), dim=1), s.action_rate)
-        add("dof_error", torch.sum(torch.square(dof_pos - self.default_dof_pos), dim=1), s.dof_error)
-        add("collision", self._rew_collision(), s.collision)
-        add("feet_air_time", self._rew_feet_air_time(commands), s.feet_air_time)
-        add("feet_stumble", self._rew_feet_stumble(), s.feet_stumble)
-        add("feet_edge", self._rew_feet_edge(), s.feet_edge)
-        add("cheat", self._rew_cheat(), s.cheat)
-        add("stuck", self._rew_stuck(lin_vel_b, commands), s.stuck)
+        add("tracking_lin_vel", self._rew_tracking_lin_vel(lin_vel_b, commands), s["tracking_lin_vel"])
+        add("tracking_ang_vel", self._rew_tracking_ang_vel(ang_vel_b, commands), s["tracking_ang_vel"])
+        add("lin_vel_z", torch.square(lin_vel_b[:, 2]), s["lin_vel_z"])
+        add("torques", torch.sum(torch.square(torques), dim=1), s["torques"])
+        add("dof_acc", torch.sum(torch.square((self._last_dof_vel - dof_vel) / self.dt), dim=1), s["dof_acc"])
+        add("action_rate", torch.sum(torch.square(self._last_actions - self._actions), dim=1), s["action_rate"])
+        add("dof_error", torch.sum(torch.square(dof_pos - self.default_dof_pos), dim=1), s["dof_error"])
+        add("collision", self._rew_collision(), s["collision"])
+        add("feet_air_time", self._rew_feet_air_time(commands), s["feet_air_time"])
+        add("feet_stumble", self._rew_feet_stumble(), s["feet_stumble"])
+        add("feet_edge", self._rew_feet_edge(), s["feet_edge"])
+        add("cheat", self._rew_cheat(), s["cheat"])
+        add("stuck", self._rew_stuck(lin_vel_b, commands), s["stuck"])
 
         total = torch.clamp(total, min=0.0)
         # minimal per-step episode record; _reset_idx fills the real episode dict
@@ -650,6 +753,8 @@ class Go2WmpLabEnv(DirectRLEnv):
             return torch.zeros(self.num_envs, device=self.device)
         first = self._contact_sensor.compute_first_contact(self.step_dt)[:, self.feet_indices]
         last_air = self._contact_sensor.data.last_air_time[:, self.feet_indices]
+        contact = self._contact_sensor.data.net_forces_w[:, self.feet_indices, 2] > 1.0
+        self._contact_filt = contact | self._contact_filt
         rew = torch.sum((last_air - 0.5) * first, dim=1)
         rew = rew * (torch.norm(commands[:, :2], dim=1) > 0.1).float()
         return rew
@@ -668,18 +773,15 @@ class Go2WmpLabEnv(DirectRLEnv):
         return out
 
     def _rew_feet_edge(self):
-        # Without the per-cell x_edge mask we use a proxy: penalise feet contacts
-        # (lateral-rich) within the gap/climb curriculum tiles.
         out = torch.zeros(self.num_envs, device=self.device)
-        if len(self.feet_indices) == 0:
+        if len(self.feet_indices) == 0 or self._x_edge_mask is None:
             return out
+        feet_xy = self._robot.data.body_pos_w[:, self.feet_indices, :2]
+        feet_at_edge = self.query_edge_mask(feet_xy)
+        edge_contact = self._contact_filt & feet_at_edge
+        rew = (self._terrain_levels > 3).float() * torch.sum(edge_contact.float(), dim=-1)
         mask = self._cat_mask(("gap", "climb"))
-        if mask.sum() == 0:
-            return out
-        f = self._contact_sensor.data.net_forces_w[:, self.feet_indices, :]
-        contact = (torch.norm(f, dim=-1) > 0.1).float()
-        edge = torch.sum(contact, dim=1) * (self._terrain_levels > 3).float()
-        out[mask] = edge[mask]
+        out[mask] = rew[mask]
         return out
 
     def _rew_cheat(self):
@@ -704,7 +806,7 @@ def register_tasks():
     )
 
     gym.register(
-        id="WMP-Go2-Rough-v0",
+        id="WMP-Go2-Flat-PPO-v0",
         entry_point=f"{__name__}:Go2WmpLabEnv",
         disable_env_checker=True,
         kwargs={

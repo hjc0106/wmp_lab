@@ -4,10 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wmp-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "IsaacLab migration of Go2 WMP training tasks."
 requires-python = ">=3.10"
+dependencies = [
+    "gymnasium",
+    "numpy",
+    "torch",
+    "scipy",
+    "trimesh",
+    "ruamel.yaml",
+    "tensorboard",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["wmp_lab*"]
+include = ["wmp_lab*", "rsl_rl*", "dreamer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

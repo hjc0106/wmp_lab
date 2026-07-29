@@ -13,8 +13,14 @@ from isaaclab.terrains.terrain_generator import TerrainGenerator
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
 from isaaclab.terrains.trimesh.utils import make_border
 
-from .legacy_terrain_layout import DEFAULT_TERRAIN_PROPORTIONS, tile_translation
-from .legacy_terrain_utils import CompatMode, combine_meshes, stable_tile_seed
+from .legacy_terrain_layout import DEFAULT_TERRAIN_PROPORTIONS, TERRAIN_CATEGORY_COLORS, tile_translation
+from .legacy_terrain_utils import (
+    CompatMode,
+    accumulate_heightfield_tile,
+    build_x_edge_mask,
+    combine_meshes,
+    stable_tile_seed,
+)
 from .terrains import make_legacy_tile
 
 logger = logging.getLogger(__name__)
@@ -30,6 +36,7 @@ class LegacyTerrainGeneratorCfg(TerrainGeneratorCfg):
     ordered_generation: bool = True
     slope_direction: str = "legacy"
     terrain_proportions: list[float] = list(DEFAULT_TERRAIN_PROPORTIONS)
+    color_by_category: bool = False
 
     def __post_init__(self) -> None:
         if self.class_type is None:
@@ -60,12 +67,16 @@ class LegacyTerrainGenerator(TerrainGenerator):
         self.flat_patches = {}
         self.terrain_meshes: list[trimesh.Trimesh] = []
         self.terrain_origins = np.zeros((cfg.num_rows, cfg.num_cols, 3))
+        self.x_edge_mask: np.ndarray | None = None
+        self.edge_mask_world_origin = np.zeros(2, dtype=np.float64)
+        self.edge_mask_horizontal_scale = cfg.horizontal_scale
 
         if cfg.use_cache and cfg.seed is None:
             logger.warning("Legacy terrain cache enabled without seed; generation may not be reproducible.")
 
         with Timer("[INFO] Generating legacy terrains took"):
             self._generate_legacy_tiles()
+        self._build_edge_mask()
         self._add_terrain_border()
         self.terrain_mesh = trimesh.util.concatenate(self.terrain_meshes)
 
@@ -79,6 +90,15 @@ class LegacyTerrainGenerator(TerrainGenerator):
         compat: CompatMode = self.cfg.compat_mode  # type: ignore[assignment]
         slope_dir: Literal["legacy", "up", "down"] = self.cfg.slope_direction  # type: ignore[assignment]
         props = list(self.cfg.terrain_proportions)
+        tile_pixels = int(self.cfg.size[0] / self.cfg.horizontal_scale)
+        border_pixels = int(self.cfg.border_width / self.cfg.horizontal_scale)
+        self._height_field_raw = np.zeros(
+            (
+                self.cfg.num_rows * tile_pixels + 2 * border_pixels,
+                self.cfg.num_cols * tile_pixels + 2 * border_pixels,
+            ),
+            dtype=np.int16,
+        )
 
         for col in range(self.cfg.num_cols):
             for row in range(self.cfg.num_rows):
@@ -86,7 +106,7 @@ class LegacyTerrainGenerator(TerrainGenerator):
                 if not self.cfg.ordered_generation:
                     difficulty_seed = stable_tile_seed(seed, "difficulty", row, col, compat)
                     difficulty = float(np.random.default_rng(difficulty_seed).uniform(0.0, 1.0))
-                meshes, origin, _cat, _diff = make_legacy_tile(
+                meshes, origin, category, _diff, tile_hf = make_legacy_tile(
                     row=row,
                     column=col,
                     num_rows=self.cfg.num_rows,
@@ -97,8 +117,37 @@ class LegacyTerrainGenerator(TerrainGenerator):
                     slope_direction=slope_dir,
                     difficulty_override=difficulty,
                 )
+                if tile_hf is not None:
+                    accumulate_heightfield_tile(
+                        self._height_field_raw,
+                        tile_hf,
+                        row,
+                        col,
+                        border_pixels=border_pixels,
+                        tile_pixels=tile_pixels,
+                    )
                 mesh = combine_meshes(meshes)
+                if self.cfg.color_by_category:
+                    mesh.visual.vertex_colors = np.tile(
+                        np.asarray(TERRAIN_CATEGORY_COLORS[category], dtype=np.uint8),
+                        (len(mesh.vertices), 1),
+                    )
                 self._add_sub_terrain_legacy(mesh, origin, row, col)
+
+    def _build_edge_mask(self) -> None:
+        center_shift_x = self.cfg.size[0] * self.cfg.num_rows * 0.5
+        center_shift_y = self.cfg.size[1] * self.cfg.num_cols * 0.5
+        self.edge_mask_world_origin = np.array(
+            [-center_shift_x - self.cfg.border_width, -center_shift_y - self.cfg.border_width],
+            dtype=np.float64,
+        )
+        padded = np.pad(self._height_field_raw, ((0, 1), (0, 1)), mode="edge")
+        self.x_edge_mask = build_x_edge_mask(
+            padded,
+            horizontal_scale=self.cfg.horizontal_scale,
+            vertical_scale=self.cfg.vertical_scale,
+            slope_threshold=self.cfg.slope_threshold,
+        )
 
     def _add_sub_terrain_legacy(self, mesh: trimesh.Trimesh, origin: np.ndarray, row: int, col: int) -> None:
         transform = np.eye(4)
@@ -110,6 +159,8 @@ class LegacyTerrainGenerator(TerrainGenerator):
         self.terrain_origins[row, col] = origin + transform[:3, -1]
 
     def _add_terrain_border(self) -> None:
+        if self.cfg.border_width <= 0.0:
+            return
         border_size = (
             self.cfg.num_rows * self.cfg.size[0] + 2 * self.cfg.border_width,
             self.cfg.num_cols * self.cfg.size[1] + 2 * self.cfg.border_width,
@@ -122,6 +173,11 @@ class LegacyTerrainGenerator(TerrainGenerator):
         )
         border_meshes = make_border(border_size, inner_size, height=abs(self.cfg.border_height), position=border_center)
         border = trimesh.util.concatenate(border_meshes)
+        if self.cfg.color_by_category:
+            border.visual.vertex_colors = np.tile(
+                np.asarray((105, 108, 103, 255), dtype=np.uint8),
+                (len(border.vertices), 1),
+            )
         selector = ~(np.asarray(border.triangles)[:, :, 2] < -0.1).any(1)
         border.update_faces(selector)
         self.terrain_meshes.append(border)

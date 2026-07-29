@@ -33,6 +33,7 @@ class Go2RoughRunnerCfg:
         num_steps_per_env = 8
         max_iterations = 2
         save_interval = 100
+        keep_last_n = 5
         experiment_name = "go2_rough_lab"
         run_name = "PPO"
         resume = False

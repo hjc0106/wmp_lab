@@ -53,7 +53,8 @@ class Go2AmpWMPRunnerCfg:
         algorithm_class_name = "AMPPPO"
         num_steps_per_env = 24
         max_iterations = 1
-        save_interval = 50
+        save_interval = 500
+        keep_last_n = 5
         experiment_name = "go2_amp_lab"
         run_name = "WMP"
         resume = False

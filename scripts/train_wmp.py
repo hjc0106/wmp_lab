@@ -19,6 +19,7 @@ from _common import (
     load_agent_cfg,
     make_env,
     prepare_seed,
+    resolve_checkpoint,
     resolve_distributed_flag,
 )
 
@@ -53,14 +54,35 @@ def main():
         if is_main_process():
             log_dir = args.log_dir or ensure_log_dir(cfg["runner"]["experiment_name"])
 
+        runner = WMPRunner(env, cfg, log_dir=log_dir, device=args.device)
+        start_iter = 0
+        if args.resume or args.checkpoint:
+            ckpt = resolve_checkpoint(args.checkpoint, log_dir=log_dir)
+            runner.load(
+                str(ckpt),
+                load_optimizer=args.load_optimizer,
+                load_wm_optimizer=args.load_wm_optimizer,
+            )
+            start_iter = runner.current_learning_iteration
+            print(
+                f"[rank{get_global_rank()}] resumed from {ckpt} at iter {start_iter}",
+                flush=True,
+            )
+
         max_iters = int(cfg["runner"]["max_iterations"])
+        if args.resume or args.checkpoint:
+            # With resume, --max_iterations is the total target iteration (inclusive).
+            num_iters = max(0, max_iters - start_iter)
+        else:
+            num_iters = max_iters
+
         print(
-            f"[rank{get_global_rank()}] starting learn(max_iterations={max_iters})",
+            f"[rank{get_global_rank()}] starting learn("
+            f"from_iter={start_iter}, additional_iterations={num_iters}, target_iter={start_iter + num_iters})",
             flush=True,
         )
-        runner = WMPRunner(env, cfg, log_dir=log_dir, device=args.device)
         try:
-            runner.learn(num_learning_iterations=max_iters, init_at_random_ep_len=True)
+            runner.learn(num_learning_iterations=num_iters, init_at_random_ep_len=True)
             print(f"[rank{get_global_rank()}] learn() returned normally", flush=True)
         except BaseException:
             print(

@@ -47,15 +47,15 @@ class TestLayout:
 
 class TestDeterminism:
     def test_same_seed_identical_mesh(self):
-        a, oa, _, _ = make_legacy_tile(3, 5, 10, 20, training_seed=99)
-        b, ob, _, _ = make_legacy_tile(3, 5, 10, 20, training_seed=99)
+        a, oa, _, _, _ = make_legacy_tile(3, 5, 10, 20, training_seed=99)
+        b, ob, _, _, _ = make_legacy_tile(3, 5, 10, 20, training_seed=99)
         assert np.allclose(oa, ob)
         assert len(a[0].vertices) == len(b[0].vertices)
         assert np.allclose(a[0].vertices, b[0].vertices)
 
     def test_different_seed_may_differ(self):
-        a, _, ca, _ = make_legacy_tile(1, 10, 10, 20, training_seed=1)
-        b, _, cb, _ = make_legacy_tile(1, 10, 10, 20, training_seed=2)
+        a, _, ca, _, _ = make_legacy_tile(1, 10, 10, 20, training_seed=1)
+        b, _, cb, _, _ = make_legacy_tile(1, 10, 10, 20, training_seed=2)
         assert ca == cb
         if ca in ("gap", "climb", "tilt", "crawl"):
             assert not np.allclose(a[0].vertices, b[0].vertices)
@@ -67,34 +67,34 @@ class TestFormulas:
         assert terrain.height_field_raw.shape == (80, 80)
 
     def test_tile_mesh_covers_full_eight_meters(self):
-        meshes, _, _, _ = make_legacy_tile(0, 0, 10, 20, training_seed=1)
+        meshes, _, _, _, _ = make_legacy_tile(0, 0, 10, 20, training_seed=1)
         assert meshes[0].bounds[0, :2] == pytest.approx([0.0, 0.0])
         assert meshes[0].bounds[1, :2] == pytest.approx([TILE_SIZE, TILE_SIZE])
 
     def test_gap_depth(self):
         rng = TileRng(stable_tile_seed(1, "gap", 5, 0, "legacy_exact"))
-        meshes, _ = legacy_gap_terrain(0.5, rng)
+        meshes, _, _ = legacy_gap_terrain(0.5, rng)
         zs = meshes[0].vertices[:, 2]
         assert zs.min() < -4.9
 
     def test_climb_is_positive(self):
-        meshes, _ = legacy_climb_terrain(0.5, TileRng(123))
+        meshes, _, _ = legacy_climb_terrain(0.5, TileRng(123))
         assert meshes[0].vertices[:, 2].max() >= 0.29
 
     def test_legacy_slope_column_is_negative(self):
-        meshes, _ = legacy_slope_terrain(0.5, TileRng(123), 0, 20)
+        meshes, _, _ = legacy_slope_terrain(0.5, TileRng(123), 0, 20)
         assert meshes[0].vertices[:, 2].min() < -0.3
         assert meshes[0].vertices[:, 2].max() <= 0.051
 
     def test_stair_category_directions_match_legacy_columns(self):
-        negative, _ = legacy_stairs_terrain(0.5, TileRng(123), 1, 20, stairs_up=False)
-        positive, _ = legacy_stairs_terrain(0.5, TileRng(123), 4, 20, stairs_up=True)
+        negative, _, _ = legacy_stairs_terrain(0.5, TileRng(123), 1, 20, stairs_up=False)
+        positive, _, _ = legacy_stairs_terrain(0.5, TileRng(123), 4, 20, stairs_up=True)
         assert negative[0].vertices[:, 2].min() < 0.0
         assert positive[0].vertices[:, 2].max() > 0.0
 
     def test_tilt_channel_width(self):
         difficulty = 0.5
-        meshes, _ = legacy_tilt_terrain(difficulty, TileRng(123))
+        meshes, _, _ = legacy_tilt_terrain(difficulty, TileRng(123))
         top_vertices = meshes[0].vertices[meshes[0].vertices[:, 2] > 0.9]
         left_edge = top_vertices[top_vertices[:, 1] < 4.0, 1].max()
         right_edge = top_vertices[top_vertices[:, 1] > 4.0, 1].min()
@@ -102,14 +102,14 @@ class TestFormulas:
 
     def test_crawl_clearance_and_exact_overlap(self):
         difficulty = 0.5
-        meshes, _ = legacy_crawl_terrain(difficulty, TileRng(456), "legacy_exact")
+        meshes, _, _ = legacy_crawl_terrain(difficulty, TileRng(456), "legacy_exact")
         raised = meshes[0].vertices[meshes[0].vertices[:, 2] > 0.0]
         assert raised[:, 2].min() == pytest.approx(0.35 - 0.15 * difficulty)
         assert len(np.unique(np.round(raised[:, 0], 6))) == 2
 
     def test_crawl_fixed_symmetric(self):
         rng = TileRng(456)
-        meshes, _ = legacy_crawl_terrain(0.5, rng, "legacy_fixed")
+        meshes, _, _ = legacy_crawl_terrain(0.5, rng, "legacy_fixed")
         verts = meshes[0].vertices
         cx = 4.0
         front = verts[(verts[:, 0] > cx) & (verts[:, 2] > 0.3)][:, 0].mean()
@@ -129,7 +129,7 @@ class TestCategoryMaskConsistency:
     def test_generator_matches_column_map(self):
         names = column_category_names(20)
         for col, expected in enumerate(names):
-            _, _, cat, _ = make_legacy_tile(0, col, 10, 20, training_seed=1)
+            _, _, cat, _, _ = make_legacy_tile(0, col, 10, 20, training_seed=1)
             assert cat == expected
 
 
@@ -149,7 +149,7 @@ class TestBaselineFile:
         for entry in data["tiles"]:
             if entry["category"] not in heightfield_categories:
                 continue
-            meshes, _, category, _ = make_legacy_tile(
+            meshes, _, category, _, _ = make_legacy_tile(
                 entry["row"], entry["column"], 10, 20, training_seed=entry["seed"]
             )
             heights = np.rint(meshes[0].vertices[:, 2] / VERTICAL_SCALE).astype(int)

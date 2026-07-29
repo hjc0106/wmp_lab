@@ -35,12 +35,11 @@ def _apply_play_overrides(cfg, args):
     cfg.noise.add_noise = False
 
     dr = cfg.domain_rand
-    dr.friction_range = [1.0, 1.0]
-    dr.restitution_range = [0.0, 0.0]
-    dr.added_mass_range = [0.0, 0.0]
-    dr.com_x_pos_range = [0.0, 0.0]
-    dr.com_y_pos_range = [0.0, 0.0]
-    dr.com_z_pos_range = [0.0, 0.0]
+    dr.randomize_friction = False
+    dr.randomize_restitution = False
+    dr.randomize_base_mass = False
+    dr.randomize_link_mass = False
+    dr.randomize_com_pos = False
     dr.randomize_action_latency = False
     dr.push_robots = False
     dr.randomize_gains = True
@@ -130,7 +129,7 @@ def play(args):
     obs = env.get_observations()
 
     runner = WMPRunner(env, cfg, log_dir=None, device=args.device)
-    runner.load(str(ckpt), load_optimizer=False, load_wm_optimizer=False)
+    runner.load(str(ckpt), load_optimizer=False, load_wm_optimizer=False, allow_inference_only=True)
     policy = runner.get_inference_policy(device=env.device)
     depth_predictor = runner.depth_predictor
     world_model = runner._world_model
@@ -274,12 +273,8 @@ def main():
         task="WMP-Go2-AMP-v0",
         num_envs=10,
         log_dir="logs/go2_amp_lab_ddp",
+        checkpoint="-1",
         headless=False,
-    )
-    parser.add_argument(
-        "--checkpoint",
-        default="-1",
-        help="Path to model_*.pt, or -1 for latest under --log_dir",
     )
     parser.add_argument(
         "--terrain",

@@ -63,7 +63,7 @@ def collect_metrics(
             if difficulties and diff not in difficulties and not any(abs(diff - d) < 1e-6 for d in difficulties):
                 continue
             for col in range(num_cols):
-                meshes, origin, cat, tile_diff = make_legacy_tile(
+                meshes, origin, cat, tile_diff, _tile_hf = make_legacy_tile(
                     row=row,
                     column=col,
                     num_rows=num_rows,

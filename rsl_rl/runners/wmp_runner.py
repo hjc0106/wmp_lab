@@ -126,6 +126,7 @@ class WMPRunner:
                                   min_std=min_std, multi_gpu_cfg=self.cfg.get("multi_gpu"), **self.alg_cfg)
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
+        self.keep_last_n = int(self.cfg.get("keep_last_n", 0))
 
         # init storage and model
         self.alg.init_storage(self.env.num_envs, self.num_steps_per_env, [num_actor_obs],
@@ -418,7 +419,11 @@ class WMPRunner:
             if self.log_dir is not None:
                 self.log(locals())
             if self.log_dir is not None and it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
+                ckpt_path = os.path.join(self.log_dir, f"model_{it}.pt")
+                self.save(ckpt_path, iteration=it)
+                if self.keep_last_n > 0 and self.gpu_global_rank == 0:
+                    from wmp_lab.checkpoint import prune_old_checkpoints
+                    prune_old_checkpoints(self.log_dir, self.keep_last_n)
             ep_infos.clear()
 
 
@@ -466,7 +471,10 @@ class WMPRunner:
 
         self.current_learning_iteration += num_learning_iterations
         if self.log_dir is not None:
-            self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
+            self.save(
+                os.path.join(self.log_dir, f"model_{self.current_learning_iteration}.pt"),
+                iteration=self.current_learning_iteration,
+            )
 
     def init_wm_dataset(self):
         self.wm_dataset = {
@@ -660,33 +668,59 @@ class WMPRunner:
                                locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
         print(log_string)
 
-    def save(self, path, infos=None):
-        torch.save({
+    def save(self, path, infos=None, iteration=None):
+        from wmp_lab.checkpoint import checkpoint_metadata
+
+        it = self.current_learning_iteration if iteration is None else iteration
+        payload = {
             'model_state_dict': self.alg.actor_critic.state_dict(),
             'optimizer_state_dict': self.alg.optimizer.state_dict(),
             'world_model_dict': self._world_model.state_dict(),
             'wm_optimizer_state_dict': self._world_model._model_opt._opt.state_dict(),
             'depth_predictor': self.depth_predictor.state_dict(),
-            # 'discriminator_state_dict': self.alg.discriminator.state_dict(),
-            # 'amp_normalizer': self.alg.amp_normalizer,
-            'iter': self.current_learning_iteration,
+            'depth_optimizer_state_dict': self.depth_predictor_opt.state_dict(),
+            'discriminator_state_dict': self.alg.discriminator.state_dict(),
+            'amp_normalizer': self.alg.amp_normalizer,
+            'iter': it,
             'infos': infos,
-        }, path)
+            **checkpoint_metadata(
+                seed=getattr(self.env, "seed", None),
+                curriculum_state={
+                    'reward_curriculum_coef': getattr(self.env, 'reward_curriculum_coef', None),
+                },
+            ),
+        }
+        torch.save(payload, path)
 
-    def load(self, path, load_optimizer=True, load_wm_optimizer = False):
+    def load(
+        self,
+        path,
+        load_optimizer=True,
+        load_wm_optimizer=False,
+        load_depth_optimizer=False,
+        allow_inference_only=False,
+    ):
+        from wmp_lab.checkpoint import validate_checkpoint_for_resume
+
         loaded_dict = torch.load(path, map_location=self.device, weights_only=False)
+        if not allow_inference_only:
+            validate_checkpoint_for_resume(loaded_dict, allow_inference_only=allow_inference_only)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'], strict=False)
         self._world_model.load_state_dict(loaded_dict['world_model_dict'], strict=False)
         if loaded_dict.get('depth_predictor') is not None:
             self.depth_predictor.load_state_dict(loaded_dict['depth_predictor'], strict=False)
-        if(load_wm_optimizer):
+        if load_wm_optimizer and loaded_dict.get('wm_optimizer_state_dict') is not None:
             self._world_model._model_opt._opt.load_state_dict(loaded_dict['wm_optimizer_state_dict'])
-        # self.alg.discriminator.load_state_dict(loaded_dict['discriminator_state_dict'], strict=False)
-        # self.alg.amp_normalizer = loaded_dict['amp_normalizer']
-        if load_optimizer:
+        if load_depth_optimizer and loaded_dict.get('depth_optimizer_state_dict') is not None:
+            self.depth_predictor_opt.load_state_dict(loaded_dict['depth_optimizer_state_dict'])
+        if loaded_dict.get('discriminator_state_dict') is not None:
+            self.alg.discriminator.load_state_dict(loaded_dict['discriminator_state_dict'], strict=False)
+        if loaded_dict.get('amp_normalizer') is not None:
+            self.alg.amp_normalizer = loaded_dict['amp_normalizer']
+        if load_optimizer and loaded_dict.get('optimizer_state_dict') is not None:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
-        self.current_learning_iteration = loaded_dict['iter']
-        return loaded_dict['infos']
+        self.current_learning_iteration = int(loaded_dict.get('iter', 0))
+        return loaded_dict.get('infos')
 
     def get_inference_policy(self, device=None):
         self.alg.actor_critic.eval()  # switch to evaluation mode (dropout for example)

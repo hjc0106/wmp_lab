@@ -23,6 +23,17 @@ LEGACY_TERRAIN_NAMES: tuple[str, ...] = (
 # Alias kept only for parsing external / historical configs.
 TERRAIN_NAME_ALIASES: dict[str, str] = {"pit": "climb"}
 
+# Play presets mirror legacy play.py / play_wmp.py terrain keys.
+PLAY_TERRAIN_PRESETS: dict[str, str | None] = {
+    "slope": "slope",
+    "stair": "stairs_up",
+    "gap": "gap",
+    "climb": "climb",
+    "tilt": "tilt",
+    "crawl": "crawl",
+    "plane": None,
+}
+
 DEFAULT_TERRAIN_PROPORTIONS: tuple[float, ...] = (
     0.0,
     0.05,
@@ -46,6 +57,20 @@ EXPECTED_COLUMN_COUNTS: dict[str, int] = {
     "tilt": 1,
     "crawl": 1,
     "rough_flat": 1,
+}
+
+# Muted diagnostic colors used only when the viewer requests per-category coloring.
+TERRAIN_CATEGORY_COLORS: dict[str, tuple[int, int, int, int]] = {
+    "wave": (72, 126, 151, 255),
+    "slope": (194, 145, 74, 255),
+    "stairs_up": (184, 92, 56, 255),
+    "stairs_down": (217, 174, 89, 255),
+    "discrete": (130, 113, 92, 255),
+    "gap": (69, 75, 79, 255),
+    "climb": (177, 67, 55, 255),
+    "tilt": (52, 132, 128, 255),
+    "crawl": (59, 101, 143, 255),
+    "rough_flat": (158, 151, 126, 255),
 }
 
 

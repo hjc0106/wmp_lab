@@ -54,14 +54,14 @@ def _rough_noise(terrain: SubTerrain, rng: TileRng) -> SubTerrain:
     )
 
 
-def _hf_result(terrain: SubTerrain) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def _hf_result(terrain: SubTerrain) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     mesh = heightfield_to_trimesh_mesh(terrain.height_field_raw)
     origin = terrain_origin_from_heightfield(terrain.height_field_raw)
     validate_mesh(mesh)
-    return [mesh], origin
+    return [mesh], origin, terrain.height_field_raw.copy()
 
 
-def legacy_wave_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_wave_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     amplitude = 0.1 + 0.2 * difficulty
     wave_terrain(terrain, num_waves=5, amplitude=amplitude)
@@ -76,7 +76,7 @@ def legacy_slope_terrain(
     num_cols: int,
     proportions: list[float] | None = None,
     slope_direction: Literal["legacy", "up", "down"] = "legacy",
-) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     slope = difficulty * 0.4
     if slope_direction == "up":
@@ -101,7 +101,7 @@ def legacy_stairs_terrain(
     proportions: list[float] | None = None,
     *,
     stairs_up: bool | None = None,
-) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     step_height = 0.05 + 0.18 * difficulty
     if stairs_up is None:
@@ -116,7 +116,7 @@ def legacy_stairs_terrain(
     return _hf_result(terrain)
 
 
-def legacy_discrete_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_discrete_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     obstacle_h = 0.05 + difficulty * 0.2
     discrete_obstacles_terrain(terrain, rng, obstacle_h, 1.0, 2.0, 20, platform_size=3.0)
@@ -124,21 +124,21 @@ def legacy_discrete_terrain(difficulty: float, rng: TileRng) -> tuple[list[trime
     return _hf_result(terrain)
 
 
-def legacy_gap_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_gap_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     gap_terrain(terrain, rng, gap_size=difficulty, platform_size=4.0)
     _rough_noise(terrain, rng)
     return _hf_result(terrain)
 
 
-def legacy_climb_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_climb_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     climb_terrain(terrain, rng, depth=0.6 * difficulty)
     _rough_noise(terrain, rng)
     return _hf_result(terrain)
 
 
-def legacy_tilt_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_tilt_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     tile_w = TILE_SIZE
     tilt_width = 0.32 - 0.04 * difficulty
     box_z = 1.0
@@ -163,14 +163,15 @@ def legacy_tilt_terrain(difficulty: float, rng: TileRng) -> tuple[list[trimesh.T
     mesh = combine_meshes([ground, *boxes])
     origin = np.array([tile_w / 2.0, tile_w / 2.0, 0.0], dtype=np.float64)
     validate_mesh(mesh)
-    return [mesh], origin
+    hf = np.zeros((int(tile_w / HORIZONTAL_SCALE), int(tile_w / HORIZONTAL_SCALE)), dtype=np.int16)
+    return [mesh], origin, hf
 
 
 def legacy_crawl_terrain(
     difficulty: float,
     rng: TileRng,
     compat_mode: CompatMode = "legacy_exact",
-) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     tile_w = TILE_SIZE
     crawl_height = 0.35 - 0.15 * difficulty
     box_x = 0.2 + 0.2 * rng.py_rng.random()
@@ -195,10 +196,11 @@ def legacy_crawl_terrain(
     mesh = combine_meshes([ground, *bars])
     origin = np.array([tile_w / 2.0, tile_w / 2.0, 0.0], dtype=np.float64)
     validate_mesh(mesh)
-    return [mesh], origin
+    hf = np.zeros((int(tile_w / HORIZONTAL_SCALE), int(tile_w / HORIZONTAL_SCALE)), dtype=np.int16)
+    return [mesh], origin, hf
 
 
-def legacy_rough_flat_terrain(_difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+def legacy_rough_flat_terrain(_difficulty: float, rng: TileRng) -> tuple[list[trimesh.Trimesh], np.ndarray, np.ndarray]:
     terrain = SubTerrain.create()
     random_uniform_terrain(terrain, rng, -0.05, 0.05, step=0.005, downsampled_scale=0.2)
     return _hf_result(terrain)
@@ -214,8 +216,8 @@ def make_legacy_tile(
     proportions: list[float] | None = None,
     slope_direction: Literal["legacy", "up", "down"] = "legacy",
     difficulty_override: float | None = None,
-) -> tuple[list[trimesh.Trimesh], np.ndarray, str, float]:
-    """Generate one tile; returns meshes, origin, category name, difficulty."""
+) -> tuple[list[trimesh.Trimesh], np.ndarray, str, float, np.ndarray | None]:
+    """Generate one tile; returns meshes, origin, category name, difficulty, heightfield."""
     from .legacy_terrain_layout import ordered_row_difficulty
 
     choice = legacy_choice(column, num_cols)
@@ -226,23 +228,23 @@ def make_legacy_tile(
     rng = TileRng(tile_seed)
 
     if cat_name == "wave":
-        meshes, origin = legacy_wave_terrain(difficulty, rng)
+        meshes, origin, tile_hf = legacy_wave_terrain(difficulty, rng)
     elif cat_name == "slope":
-        meshes, origin = legacy_slope_terrain(difficulty, rng, column, num_cols, proportions, slope_direction)
+        meshes, origin, tile_hf = legacy_slope_terrain(difficulty, rng, column, num_cols, proportions, slope_direction)
     elif cat_name == "stairs_up":
-        meshes, origin = legacy_stairs_terrain(difficulty, rng, column, num_cols, proportions, stairs_up=False)
+        meshes, origin, tile_hf = legacy_stairs_terrain(difficulty, rng, column, num_cols, proportions, stairs_up=False)
     elif cat_name == "stairs_down":
-        meshes, origin = legacy_stairs_terrain(difficulty, rng, column, num_cols, proportions, stairs_up=True)
+        meshes, origin, tile_hf = legacy_stairs_terrain(difficulty, rng, column, num_cols, proportions, stairs_up=True)
     elif cat_name == "discrete":
-        meshes, origin = legacy_discrete_terrain(difficulty, rng)
+        meshes, origin, tile_hf = legacy_discrete_terrain(difficulty, rng)
     elif cat_name == "gap":
-        meshes, origin = legacy_gap_terrain(difficulty, rng)
+        meshes, origin, tile_hf = legacy_gap_terrain(difficulty, rng)
     elif cat_name == "climb":
-        meshes, origin = legacy_climb_terrain(difficulty, rng)
+        meshes, origin, tile_hf = legacy_climb_terrain(difficulty, rng)
     elif cat_name == "tilt":
-        meshes, origin = legacy_tilt_terrain(difficulty, rng)
+        meshes, origin, tile_hf = legacy_tilt_terrain(difficulty, rng)
     elif cat_name == "crawl":
-        meshes, origin = legacy_crawl_terrain(difficulty, rng, compat_mode)
+        meshes, origin, tile_hf = legacy_crawl_terrain(difficulty, rng, compat_mode)
     else:
-        meshes, origin = legacy_rough_flat_terrain(difficulty, rng)
-    return meshes, origin, cat_name, difficulty
+        meshes, origin, tile_hf = legacy_rough_flat_terrain(difficulty, rng)
+    return meshes, origin, cat_name, difficulty, tile_hf

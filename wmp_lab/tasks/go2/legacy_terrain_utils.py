@@ -227,19 +227,20 @@ def convert_heightfield_to_trimesh(
     horizontal_scale: float,
     vertical_scale: float,
     slope_threshold: float | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     hf = height_field_raw
     num_rows, num_cols = hf.shape
     y = np.linspace(0, (num_cols - 1) * horizontal_scale, num_cols)
     x = np.linspace(0, (num_rows - 1) * horizontal_scale, num_rows)
     yy, xx = np.meshgrid(y, x)
+    move_x = np.zeros((num_rows, num_cols), dtype=bool)
     if slope_threshold is not None:
         slope_threshold *= horizontal_scale / vertical_scale
-        move_x = np.zeros((num_rows, num_cols))
+        move_x_arr = np.zeros((num_rows, num_cols))
         move_y = np.zeros((num_rows, num_cols))
         move_corners = np.zeros((num_rows, num_cols))
-        move_x[: num_rows - 1, :] += hf[1:num_rows, :] - hf[: num_rows - 1, :] > slope_threshold
-        move_x[1:num_rows, :] -= hf[: num_rows - 1, :] - hf[1:num_rows, :] > slope_threshold
+        move_x_arr[: num_rows - 1, :] += hf[1:num_rows, :] - hf[: num_rows - 1, :] > slope_threshold
+        move_x_arr[1:num_rows, :] -= hf[: num_rows - 1, :] - hf[1:num_rows, :] > slope_threshold
         move_y[:, : num_cols - 1] += hf[:, 1:num_cols] - hf[:, : num_cols - 1] > slope_threshold
         move_y[:, 1:num_cols] -= hf[:, : num_cols - 1] - hf[:, 1:num_cols] > slope_threshold
         move_corners[: num_rows - 1, : num_cols - 1] += (
@@ -248,7 +249,8 @@ def convert_heightfield_to_trimesh(
         move_corners[1:num_rows, 1:num_cols] -= (
             hf[: num_rows - 1, : num_cols - 1] - hf[1:num_rows, 1:num_cols] > slope_threshold
         )
-        xx += (move_x + move_corners * (move_x == 0)) * horizontal_scale
+        move_x = move_x_arr != 0
+        xx += (move_x_arr + move_corners * (move_x_arr == 0)) * horizontal_scale
         yy += (move_y + move_corners * (move_y == 0)) * horizontal_scale
     vertices = np.zeros((num_rows * num_cols, 3), dtype=np.float32)
     vertices[:, 0] = xx.flatten()
@@ -268,7 +270,43 @@ def convert_heightfield_to_trimesh(
         triangles[start + 1 : stop : 2, 0] = ind0
         triangles[start + 1 : stop : 2, 1] = ind2
         triangles[start + 1 : stop : 2, 2] = ind3
+    if slope_threshold is not None:
+        return vertices, triangles, move_x
     return vertices, triangles
+
+
+def build_x_edge_mask(
+    height_field_raw: np.ndarray,
+    horizontal_scale: float = HORIZONTAL_SCALE,
+    vertical_scale: float = VERTICAL_SCALE,
+    slope_threshold: float | None = SLOPE_THRESHOLD,
+    half_edge_width: int = 1,
+) -> np.ndarray:
+    """Build dilated x-edge mask from a global heightfield (legacy IsaacGym semantics)."""
+    from scipy.ndimage import binary_dilation
+
+    _, _, edge = convert_heightfield_to_trimesh(
+        height_field_raw, horizontal_scale, vertical_scale, slope_threshold
+    )
+    structure = np.ones((half_edge_width * 2 + 1, 1))
+    return binary_dilation(edge, structure=structure)
+
+
+def accumulate_heightfield_tile(
+    height_field_raw: np.ndarray,
+    tile_hf: np.ndarray,
+    row: int,
+    col: int,
+    *,
+    border_pixels: int,
+    tile_pixels: int,
+) -> None:
+    """Copy a per-tile heightfield into the global legacy map."""
+    start_x = border_pixels + row * tile_pixels
+    end_x = start_x + tile_pixels
+    start_y = border_pixels + col * tile_pixels
+    end_y = start_y + tile_pixels
+    height_field_raw[start_x:end_x, start_y:end_y] = tile_hf[:tile_pixels, :tile_pixels]
 
 
 def box_trimesh(size: np.ndarray, center_position: np.ndarray) -> trimesh.Trimesh:
@@ -335,9 +373,10 @@ def heightfield_to_trimesh_mesh(
     # samples so each independently generated tile has collision coverage up
     # to the full 8.0 m tile boundary.
     height_field_raw = np.pad(height_field_raw, ((0, 1), (0, 1)), mode="edge")
-    vertices, triangles = convert_heightfield_to_trimesh(
+    result = convert_heightfield_to_trimesh(
         height_field_raw, horizontal_scale, vertical_scale, slope_threshold
     )
+    vertices, triangles = result[0], result[1]
     return trimesh.Trimesh(vertices=vertices, faces=triangles, process=False)
 
 

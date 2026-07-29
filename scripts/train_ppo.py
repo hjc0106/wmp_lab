@@ -21,7 +21,7 @@ from _common import (
 def main():
     parser = argparse.ArgumentParser()
     add_common_args(parser)
-    parser.set_defaults(task="WMP-Go2-Rough-v0")
+    parser.set_defaults(task="WMP-Go2-Flat-PPO-v0")
     args = parser.parse_args()
     bootstrap_paths()
     resolve_distributed_flag(args)
