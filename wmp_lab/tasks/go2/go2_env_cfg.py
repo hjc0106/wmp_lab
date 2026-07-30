@@ -19,7 +19,7 @@ from isaaclab.sensors.ray_caster.patterns.patterns_cfg import (
     PatternBaseCfg,
     PinholeCameraPatternCfg,
 )
-from isaaclab.sim import SimulationCfg
+from isaaclab.sim import PhysxCfg, SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 
@@ -33,6 +33,26 @@ from .legacy_terrain_layout import (
 )
 
 WMP_LAB_ROOT = lab_root()
+
+
+def configure_physx_for_num_envs(cfg, num_envs: int) -> None:
+    """Scale GPU PhysX buffers for large parallel env counts (trimesh terrain + contacts).
+
+    Default ``gpu_collision_stack_size`` (2**26 ≈ 64MB) overflows around 4096 envs;
+    Isaac Lab uses 2**28 for 4096-env contact-rich scenes.
+    """
+    if num_envs <= 1024:
+        return
+
+    if num_envs <= 2048:
+        stack_size = 2**27
+    else:
+        stack_size = 2**28
+
+    physx: PhysxCfg = cfg.sim.physx
+    physx.gpu_collision_stack_size = stack_size
+    physx.gpu_max_rigid_contact_count = max(physx.gpu_max_rigid_contact_count, 2**23)
+    physx.gpu_max_rigid_patch_count = max(physx.gpu_max_rigid_patch_count, 2**23)
 GO2_URDF = resource_path("robots", "go2", "urdf", "go2.urdf")
 USD_DIR = generated_path("usd")
 TERRAIN_PRIM = "/World/ground"

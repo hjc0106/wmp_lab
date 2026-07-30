@@ -164,6 +164,9 @@ def make_env(
     cfg.scene.num_envs = num_envs
     cfg.env.num_envs = num_envs
     cfg.depth.camera_num_envs = min(cfg.depth.camera_num_envs, num_envs)
+    from wmp_lab.tasks.go2.go2_env_cfg import configure_physx_for_num_envs
+
+    configure_physx_for_num_envs(cfg, num_envs)
     cfg.sim.device = device
     if seed is not None:
         if hasattr(cfg, "seed"):
