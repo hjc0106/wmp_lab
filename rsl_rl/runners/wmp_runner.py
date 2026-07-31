@@ -669,7 +669,7 @@ class WMPRunner:
         print(log_string)
 
     def save(self, path, infos=None, iteration=None):
-        from wmp_lab.checkpoint import checkpoint_metadata
+        from wmp_lab.checkpoint import checkpoint_metadata, serialize_amp_normalizer
 
         it = self.current_learning_iteration if iteration is None else iteration
         payload = {
@@ -680,7 +680,7 @@ class WMPRunner:
             'depth_predictor': self.depth_predictor.state_dict(),
             'depth_optimizer_state_dict': self.depth_predictor_opt.state_dict(),
             'discriminator_state_dict': self.alg.discriminator.state_dict(),
-            'amp_normalizer': self.alg.amp_normalizer,
+            'amp_normalizer': serialize_amp_normalizer(self.alg.amp_normalizer),
             'iter': it,
             'infos': infos,
             **checkpoint_metadata(
@@ -700,9 +700,9 @@ class WMPRunner:
         load_depth_optimizer=False,
         allow_inference_only=False,
     ):
-        from wmp_lab.checkpoint import validate_checkpoint_for_resume
+        from wmp_lab.checkpoint import deserialize_amp_normalizer, torch_load_checkpoint, validate_checkpoint_for_resume
 
-        loaded_dict = torch.load(path, map_location=self.device, weights_only=False)
+        loaded_dict = torch_load_checkpoint(path, map_location=self.device)
         if not allow_inference_only:
             validate_checkpoint_for_resume(loaded_dict, allow_inference_only=allow_inference_only)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'], strict=False)
@@ -716,7 +716,7 @@ class WMPRunner:
         if loaded_dict.get('discriminator_state_dict') is not None:
             self.alg.discriminator.load_state_dict(loaded_dict['discriminator_state_dict'], strict=False)
         if loaded_dict.get('amp_normalizer') is not None:
-            self.alg.amp_normalizer = loaded_dict['amp_normalizer']
+            self.alg.amp_normalizer = deserialize_amp_normalizer(loaded_dict['amp_normalizer'])
         if load_optimizer and loaded_dict.get('optimizer_state_dict') is not None:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
         self.current_learning_iteration = int(loaded_dict.get('iter', 0))

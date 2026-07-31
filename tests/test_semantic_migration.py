@@ -12,6 +12,8 @@ from wmp_lab.checkpoint import (
     PRE_SEMANTIC_FIX_TAG,
     TRAINING_SEMANTICS_VERSION,
     is_pre_semantic_fix_checkpoint,
+    deserialize_amp_normalizer,
+    serialize_amp_normalizer,
     validate_checkpoint_for_resume,
 )
 from wmp_lab.tasks.go2.legacy_terrain_utils import (
@@ -38,7 +40,7 @@ class TestCheckpointVersioning:
 
     def test_current_semantics_version(self):
         assert TRAINING_SEMANTICS_VERSION > 0
-        assert CHECKPOINT_FORMAT_VERSION >= 1
+        assert CHECKPOINT_FORMAT_VERSION >= 2
         assert not is_pre_semantic_fix_checkpoint(
             {
                 "training_semantics_version": TRAINING_SEMANTICS_VERSION,
@@ -46,6 +48,29 @@ class TestCheckpointVersioning:
                 "amp_normalizer": object(),
             }
         )
+
+    def test_amp_normalizer_serializes_without_numpy_objects(self):
+        from rsl_rl.utils.utils import Normalizer
+
+        normalizer = Normalizer((3,), epsilon=1e-5, clip_obs=5.0)
+        normalizer.mean = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+        normalizer.var = np.array([4.0, 9.0, 16.0], dtype=np.float64)
+        normalizer.count = 123.0
+
+        payload = serialize_amp_normalizer(normalizer)
+        assert payload["__class__"] == "Normalizer"
+        assert isinstance(payload["mean"], list)
+        assert isinstance(payload["var"], list)
+        assert payload["mean"] == [1.0, 2.0, 3.0]
+        assert payload["var"] == [4.0, 9.0, 16.0]
+
+        restored = deserialize_amp_normalizer(payload)
+        assert isinstance(restored, Normalizer)
+        assert restored.epsilon == pytest.approx(1e-5)
+        assert restored.clip_obs == pytest.approx(5.0)
+        assert restored.count == pytest.approx(123.0)
+        np.testing.assert_allclose(restored.mean, normalizer.mean)
+        np.testing.assert_allclose(restored.var, normalizer.var)
 
 
 class TestRewardScaling:
