@@ -37,6 +37,7 @@ class LegacyTerrainGeneratorCfg(TerrainGeneratorCfg):
     slope_direction: str = "legacy"
     terrain_proportions: list[float] = list(DEFAULT_TERRAIN_PROPORTIONS)
     color_by_category: bool = False
+    max_difficulty: float = 1.0
 
     def __post_init__(self) -> None:
         if self.class_type is None:
@@ -53,6 +54,8 @@ class LegacyTerrainGenerator(TerrainGenerator):
             raise ValueError(f"Unsupported terrain compatibility mode: {cfg.compat_mode!r}")
         if cfg.slope_direction not in ("legacy", "up", "down"):
             raise ValueError(f"Unsupported slope direction: {cfg.slope_direction!r}")
+        if not 0.0 <= cfg.max_difficulty <= 1.0:
+            raise ValueError("Legacy terrain max_difficulty must be in [0, 1]")
         if tuple(cfg.size) != (8.0, 8.0) or cfg.horizontal_scale != 0.1 or cfg.vertical_scale != 0.005:
             raise ValueError("Legacy WMP terrains require size=8x8, horizontal_scale=0.1, vertical_scale=0.005")
         if len(cfg.terrain_proportions) != 10 or sum(cfg.terrain_proportions) <= 0:
@@ -106,6 +109,9 @@ class LegacyTerrainGenerator(TerrainGenerator):
                 if not self.cfg.ordered_generation:
                     difficulty_seed = stable_tile_seed(seed, "difficulty", row, col, compat)
                     difficulty = float(np.random.default_rng(difficulty_seed).uniform(0.0, 1.0))
+                if difficulty is None:
+                    difficulty = row / self.cfg.num_rows
+                difficulty = min(difficulty, self.cfg.max_difficulty)
                 meshes, origin, category, _diff, tile_hf = make_legacy_tile(
                     row=row,
                     column=col,

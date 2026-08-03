@@ -308,6 +308,7 @@ def _build_go2_terrain_generator(
     seed: int | None = None,
     compat_mode: str = "legacy_exact",
     slope_direction: str = "legacy",
+    max_difficulty: float = 1.0,
 ) -> LegacyTerrainGeneratorCfg:
     """Legacy-compatible terrain generator for the WMP 10-type curriculum."""
     default = {name: float(DEFAULT_TERRAIN_PROPORTIONS[i]) for i, name in enumerate(GO2_TERRAIN_NAMES)}
@@ -321,6 +322,7 @@ def _build_go2_terrain_generator(
         ordered_generation=True,
         compat_mode=compat_mode,
         slope_direction=slope_direction,
+        max_difficulty=max_difficulty,
         terrain_proportions=[default[n] for n in GO2_TERRAIN_NAMES],
         size=(8.0, 8.0),
         border_width=25.0,

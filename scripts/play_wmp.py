@@ -85,6 +85,17 @@ def _apply_play_overrides(cfg, args):
         cfg.rewards.scales.feet_stumble = 0.0
         cfg.terrain_meta.terrain_proportions = [0.0] * 9 + [1.0]
     else:
+        max_difficulty = 1.0
+        if terrain_name == "climb":
+            # Climb adds up to 5 cm of roughness on top of its 0.6*difficulty
+            # step. Keep the resulting highest point within the requested Go2
+            # standing height (40 cm by default).
+            roughness_height = 0.05
+            max_difficulty = max(
+                0.0,
+                min(1.0, (args.max_climb_height - roughness_height) / 0.6),
+            )
+
         proportions = {name: 0.0 for name in GO2_TERRAIN_NAMES}
         proportions[terrain_name] = 1.0
         cfg.terrain_meta.mesh_type = "trimesh"
@@ -102,7 +113,9 @@ def _apply_play_overrides(cfg, args):
             seed=terrain_seed,
             compat_mode=args.terrain_compat,
             slope_direction=args.slope_direction,
+            max_difficulty=max_difficulty,
         )
+        cfg.terrain.terrain_generator.border_width = max(0.0, args.terrain_border_width)
         cfg.terrain.use_terrain_origins = True
         cfg.terrain.max_init_terrain_level = cfg.terrain_meta.max_init_terrain_level
 
@@ -182,6 +195,21 @@ def play(args):
         flush=True,
     )
 
+    gait_stats = None
+    if args.diagnose_gait:
+        joint_names = list(env._robot.joint_names[: env.num_actions])
+        print(f"[gait] joint_order={joint_names}", flush=True)
+        gait_stats = {
+            "samples": 0,
+            "action_abs": torch.zeros(env.num_actions, device=env.device),
+            "torque_abs": torch.zeros(env.num_actions, device=env.device),
+            "torque_sat": torch.zeros(env.num_actions, device=env.device),
+            "joint_min": torch.full((env.num_actions,), torch.inf, device=env.device),
+            "joint_max": torch.full((env.num_actions,), -torch.inf, device=env.device),
+            "foot_contact": torch.zeros(len(env.feet_indices), device=env.device),
+            "foot_force": torch.zeros(len(env.feet_indices), device=env.device),
+        }
+
     with torch.inference_mode():
         for step in range(max_steps):
             try:
@@ -215,6 +243,22 @@ def play(args):
 
             alive = alive * (1.0 - dones.float())
             total_reward += rews * alive
+
+            if gait_stats is not None:
+                robot = env._robot.data
+                joint_pos = robot.joint_pos[:, : env.num_actions]
+                torque = robot.applied_torque[:, : env.num_actions]
+                limits = env.torque_limits.unsqueeze(0)
+                foot_force = env._contact_sensor.data.net_forces_w[:, env.feet_indices, :]
+                foot_force_norm = torch.linalg.vector_norm(foot_force, dim=-1)
+                gait_stats["samples"] += env.num_envs
+                gait_stats["action_abs"] += actions.abs().sum(0)
+                gait_stats["torque_abs"] += torque.abs().sum(0)
+                gait_stats["torque_sat"] += (torque.abs() >= 0.99 * limits).sum(0)
+                gait_stats["joint_min"] = torch.minimum(gait_stats["joint_min"], joint_pos.amin(0))
+                gait_stats["joint_max"] = torch.maximum(gait_stats["joint_max"], joint_pos.amax(0))
+                gait_stats["foot_contact"] += (foot_force_norm > 1.0).sum(0)
+                gait_stats["foot_force"] += foot_force_norm.sum(0)
 
             wm_action_history = torch.concat(
                 (wm_action_history[:, 1:], actions.unsqueeze(1).to(world_model.device)),
@@ -260,6 +304,31 @@ def play(args):
                     flush=True,
                 )
 
+    if gait_stats is not None:
+        count = max(1, gait_stats["samples"])
+        joint_names = env._robot.joint_names[: env.num_actions]
+        for leg in ("FL", "FR", "RL", "RR"):
+            ids = [i for i, name in enumerate(joint_names) if name.startswith(f"{leg}_")]
+            values = lambda key: [round(v, 4) for v in gait_stats[key][ids].tolist()]
+            mean_values = lambda key: [round(v / count, 4) for v in gait_stats[key][ids].tolist()]
+            print(
+                f"[gait] {leg} mean_abs_action={mean_values('action_abs')} "
+                f"mean_abs_torque={mean_values('torque_abs')} "
+                f"torque_sat_rate={mean_values('torque_sat')} "
+                f"joint_range={list(zip(values('joint_min'), values('joint_max')))}",
+                flush=True,
+            )
+        foot_sensor_names = [env._contact_sensor.body_names[i] for i in env.feet_indices.tolist()]
+        foot_robot_names = [env._robot.body_names[i] for i in env.feet_indices.tolist()]
+        mapped_foot_names = [env._robot.body_names[i] for i in env.feet_body_indices.tolist()]
+        print(
+            f"[gait] contact_sensor_feet={foot_sensor_names} "
+            f"same_indices_in_articulation={foot_robot_names} "
+            f"mapped_articulation_feet={mapped_foot_names} "
+            f"contact_duty={(gait_stats['foot_contact'] / count).tolist()} "
+            f"mean_force={(gait_stats['foot_force'] / count).tolist()}",
+            flush=True,
+        )
     print(f"[play] finished. last mean cumulative reward: {total_reward.mean().item():.3f}", flush=True)
     return env
 
@@ -283,7 +352,24 @@ def main():
         help="Single-terrain play preset (legacy play.py compatible)",
     )
     parser.add_argument("--terrain_rows", type=int, default=10)
-    parser.add_argument("--terrain_cols", type=int, default=20)
+    parser.add_argument(
+        "--terrain_cols",
+        type=int,
+        default=1,
+        help="Number of 8 m terrain lanes; one keeps the play scene narrow",
+    )
+    parser.add_argument(
+        "--terrain_border_width",
+        type=float,
+        default=5.0,
+        help="Flat border around generated play terrain in meters",
+    )
+    parser.add_argument(
+        "--max_climb_height",
+        type=float,
+        default=0.4,
+        help="Maximum climb surface height including roughness, in meters",
+    )
     parser.add_argument("--terrain_seed", type=int, default=None)
     parser.add_argument(
         "--terrain_compat",
@@ -299,6 +385,11 @@ def main():
     )
     parser.add_argument("--lin_vel_x", type=float, default=0.6)
     parser.add_argument("--num_episodes", type=float, default=1.0)
+    parser.add_argument(
+        "--diagnose_gait",
+        action="store_true",
+        help="Print per-leg action, torque, joint-range, and contact diagnostics",
+    )
     args = parser.parse_args()
     bootstrap_paths()
     resolve_distributed_flag(args)

@@ -229,9 +229,21 @@ class Go2WmpLabEnv(DirectRLEnv):
             return torch.tensor(ids, dtype=torch.long, device=self.device)
 
         self.base_contact_ids = find("base")
-        self.feet_indices = find(".*foot")
+        feet_ids, feet_names = self._contact_sensor.find_bodies(".*foot")
+        self.feet_indices = torch.tensor(feet_ids, dtype=torch.long, device=self.device)
         if len(self.feet_indices) == 0:
-            self.feet_indices = find(".*_foot")
+            feet_ids, feet_names = self._contact_sensor.find_bodies(".*_foot")
+            self.feet_indices = torch.tensor(feet_ids, dtype=torch.long, device=self.device)
+        # ContactSensor and Articulation maintain independent body orderings.
+        # Keep sensor indices for contact tensors and map the same names into
+        # articulation indices for body poses (used by the feet-edge reward).
+        robot_body_id = {name: idx for idx, name in enumerate(self._robot.body_names)}
+        missing = [name for name in feet_names if name not in robot_body_id]
+        if missing:
+            raise RuntimeError(f"Contact-sensor feet missing from articulation: {missing}")
+        self.feet_body_indices = torch.tensor(
+            [robot_body_id[name] for name in feet_names], dtype=torch.long, device=self.device
+        )
         self.penalised_contact_indices = find(".*thigh|.*calf")
         self.termination_contact_indices = self.base_contact_ids
 
@@ -776,7 +788,7 @@ class Go2WmpLabEnv(DirectRLEnv):
         out = torch.zeros(self.num_envs, device=self.device)
         if len(self.feet_indices) == 0 or self._x_edge_mask is None:
             return out
-        feet_xy = self._robot.data.body_pos_w[:, self.feet_indices, :2]
+        feet_xy = self._robot.data.body_pos_w[:, self.feet_body_indices, :2]
         feet_at_edge = self.query_edge_mask(feet_xy)
         edge_contact = self._contact_filt & feet_at_edge
         rew = (self._terrain_levels > 3).float() * torch.sum(edge_contact.float(), dim=-1)
